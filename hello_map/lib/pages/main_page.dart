@@ -38,6 +38,10 @@ class _MainPageState extends State<MainPage> {
     context.read<FavoritesPageCubit>().setRepo();
     context.read<MainPageCubit>().setRepo();
     context.read<SearchPageCubit>().setRepo();
+
+    mapController.registerTouchCallback((pos) async {
+      context.read<MainPageCubit>().registerLandmarkTapCallback(pos);
+    });
   }
 
   @override

@@ -19,22 +19,21 @@ class FavoritesPage extends StatelessWidget {
         title: const Text("Favorites list"),
         backgroundColor: Colors.deepPurple[900],
       ),
-      body: FutureBuilder<List<Landmark>>(
-          future: context.read<FavoritesPageCubit>().fromLandmarkListToListOfLandmarks(),
-          builder: (context, snapshot) {
-            if (!snapshot.hasData) return Container();
-            return ListView.builder(
-              padding: EdgeInsets.zero,
-              itemCount: snapshot.data!.length,
-              controller: ScrollController(),
-              itemBuilder: (context, index) {
-                final lmk = snapshot.data!.elementAt(index);
-                return FavoritesItem(
-                  landmark: lmk,
-                );
-              },
-            );
-          }),
+      body: BlocBuilder<FavoritesPageCubit, FavoritesPageState>(
+        builder: (context, state) {
+          return ListView.builder(
+            padding: EdgeInsets.zero,
+            itemCount: state.landmarkList.length,
+            controller: ScrollController(),
+            itemBuilder: (context, index) {
+              final lmk = state.landmarkList[index];
+              return FavoritesItem(
+                landmark: lmk,
+              );
+            },
+          );
+        },
+      ),
     );
     ;
   }

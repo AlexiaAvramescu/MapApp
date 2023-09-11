@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math';
 import 'dart:typed_data';
 
 import 'package:gem_kit/api/gem_addressinfo.dart';
@@ -6,6 +7,7 @@ import 'package:gem_kit/api/gem_coordinates.dart';
 import 'package:gem_kit/api/gem_geographicarea.dart';
 import 'package:gem_kit/api/gem_landmark.dart';
 import 'package:gem_kit/api/gem_landmarkstore.dart';
+import 'package:gem_kit/api/gem_landmarkstoreservice.dart';
 import 'package:gem_kit/api/gem_mapviewpreferences.dart';
 import 'package:gem_kit/api/gem_searchpreferences.dart';
 import 'package:gem_kit/api/gem_types.dart';
@@ -21,12 +23,23 @@ import 'package:hello_map/utility.dart';
 class RepositoryImpl implements Repository {
   final GemMapController mapController;
   late SearchService gemSearchService;
+  LandmarkStoreService? landmarkStoreService;
+  LandmarkStore? favoritesStore;
   //late List<Landmark> favorites;
 
   late Completer<List<Landmark>> completer;
 
   RepositoryImpl({required this.mapController}) {
     SearchService.create(mapController.mapId).then((service) => gemSearchService = service);
+    LandmarkStoreService.create(mapController.mapId).then((value) {
+      landmarkStoreService = value;
+
+      String favoritesStoreName = 'Favorites';
+
+      landmarkStoreService!.getLandmarkStoreByName(favoritesStoreName).then((value) => favoritesStore = value);
+
+      landmarkStoreService!.createLandmarkStore(favoritesStoreName).then((value) => favoritesStore ??= value);
+    });
   }
 
   @override
@@ -128,9 +141,9 @@ class RepositoryImpl implements Repository {
   void deactivateAllHighlights() => mapController.deactivateAllHighlights();
 
   @override
-  Future<bool> checkIfFavourite({required LandmarkStore favoritesStore, required Landmark focusedLandmark}) async {
+  Future<bool> checkIfFavourite({required Landmark focusedLandmark}) async {
     final focusedLandmarkCoords = focusedLandmark.getCoordinates();
-    final favourites = await favoritesStore.getLandmarks();
+    final favourites = await favoritesStore!.getLandmarks();
     final favoritesSize = await favourites.size();
 
     for (int i = 0; i < favoritesSize; i++) {
@@ -146,14 +159,34 @@ class RepositoryImpl implements Repository {
   }
 
   @override
-  Future<void> onFavoritesTap(
-      {required bool isLandmarkFavorite,
-      required LandmarkStore favoritesStore,
-      required Landmark focusedLandmark}) async {
+  Future<void> onFavoritesTap({required bool isLandmarkFavorite, required Landmark focusedLandmark}) async {
     if (isLandmarkFavorite) {
-      await favoritesStore.removeLandmark(focusedLandmark);
+      await favoritesStore!.removeLandmark(focusedLandmark);
     } else {
-      await favoritesStore.addLandmark(focusedLandmark);
+      await favoritesStore!.addLandmark(focusedLandmark);
     }
+  }
+
+  @override
+  Future<Landmark?> registerLandmarkTapCallback(Point<num> pos) async {
+    // Select the object at the tap position.
+    await mapController.selectMapObjects(pos);
+
+    // Get the selected landmarks.
+    final landmarks = await mapController.cursorSelectionLandmarks();
+
+    final landmarksSize = await landmarks.size();
+
+    // Check if there is a selected Landmark.
+    if (landmarksSize == 0) {
+      return null;
+    }
+
+    // Highlight the landmark on the map.
+    mapController.activateHighlight(landmarks);
+
+    final lmk = await landmarks.at(0);
+
+    return lmk;
   }
 }

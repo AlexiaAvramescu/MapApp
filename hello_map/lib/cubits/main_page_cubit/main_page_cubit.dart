@@ -1,6 +1,7 @@
+import 'dart:math';
+
 import 'package:bloc/bloc.dart';
 import 'package:gem_kit/api/gem_landmark.dart';
-import 'package:gem_kit/api/gem_landmarkstore.dart';
 import 'package:hello_map/controller.dart';
 import 'package:hello_map/panel_info.dart';
 import 'package:hello_map/repositories/repository.dart';
@@ -16,6 +17,7 @@ class MainPageCubit extends Cubit<MainPageState> {
   }
 
   Future<PanelInfo> getInfo() => repo!.getPanelInfo(state.focusedLandmark!);
+
   void onCancelLandmarkPanel() {
     repo!.deactivateAllHighlights;
 
@@ -23,16 +25,20 @@ class MainPageCubit extends Cubit<MainPageState> {
   }
 
   void onFavoritesTap() async {
-    bool value =
-        await repo!.checkIfFavourite(favoritesStore: state.favoritesStore!, focusedLandmark: state.focusedLandmark!);
+    await repo!.onFavoritesTap(isLandmarkFavorite: state.isLandmarkFavorite, focusedLandmark: state.focusedLandmark!);
+    bool value = await repo!.checkIfFavourite(focusedLandmark: state.focusedLandmark!);
 
-    emit(MainPageState(isLandmarkFavorite: value));
+    emit(MainPageState(focusedLandmark: state.focusedLandmark, isLandmarkFavorite: value));
+  }
 
-    await repo!.onFavoritesTap(
-        isLandmarkFavorite: state.isLandmarkFavorite,
-        favoritesStore: state.favoritesStore!,
-        focusedLandmark: state.focusedLandmark!);
-
-    emit(MainPageState(isLandmarkFavorite: !state.isLandmarkFavorite));
+  Future<void> registerLandmarkTapCallback(Point<num> pos) async {
+    final landmark = await repo!.registerLandmarkTapCallback(pos);
+    if (landmark != null) {
+      if (await repo!.checkIfFavourite(focusedLandmark: landmark)) {
+        emit(MainPageFocusedLandmark(landmark: landmark, isFavoriteLandmark: true));
+      } else {
+        emit(MainPageFocusedLandmark(landmark: landmark));
+      }
+    }
   }
 }

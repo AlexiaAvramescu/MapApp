@@ -40,7 +40,7 @@ class SearchPage extends StatelessWidget {
                   filled: true,
                   fillColor: Colors.white,
                   contentPadding: const EdgeInsets.all(15),
-                  hintText: 'Braila',
+                  hintText: 'Search location',
                   hintStyle: const TextStyle(
                     color: Color.fromARGB(255, 160, 160, 160),
                   ),
@@ -77,7 +77,7 @@ class SearchPage extends StatelessWidget {
                   ),
                 );
               } else
-                return Text('haide');
+                return Container();
             },
           )
         ],

@@ -1,7 +1,8 @@
+import 'dart:math';
+
 import 'package:gem_kit/api/gem_coordinates.dart';
 import 'package:gem_kit/api/gem_geographicarea.dart';
 import 'package:gem_kit/api/gem_landmark.dart';
-import 'package:gem_kit/api/gem_landmarkstore.dart';
 import 'package:gem_kit/api/gem_searchpreferences.dart';
 import 'package:hello_map/panel_info.dart';
 
@@ -15,7 +16,7 @@ abstract class Repository {
   Future<void> onCenterCoordinatesButtonPressed(Coordinates coordinates);
   Future<PanelInfo> getPanelInfo(Landmark focusedLandmark);
   void deactivateAllHighlights();
-  Future<void> onFavoritesTap(
-      {required bool isLandmarkFavorite, required LandmarkStore favoritesStore, required Landmark focusedLandmark});
-  Future<bool> checkIfFavourite({required LandmarkStore favoritesStore, required Landmark focusedLandmark});
+  Future<void> onFavoritesTap({required bool isLandmarkFavorite, required Landmark focusedLandmark});
+  Future<bool> checkIfFavourite({required Landmark focusedLandmark});
+  Future<Landmark?> registerLandmarkTapCallback(Point<num> pos);
 }
