@@ -1,3 +1,4 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:gem_kit/api/gem_landmark.dart';
@@ -129,10 +130,12 @@ class _MainPageState extends State<MainPage> {
             borderRadius: BorderRadius.circular(20),
           ),
           child: IconButton(
-              onPressed: () {}, //cubit onCenterCoordinatesButtonPressed
+              onPressed: () {
+                context.read<MainPageCubit>().onFollowPositionButtonPressed();
+              }, //cubit onCenterCoordinatesButtonPressed
               iconSize: 30,
               icon: const Icon(
-                Icons.adjust,
+                CupertinoIcons.location,
                 color: Colors.white,
               )),
         ),
@@ -160,7 +163,7 @@ class _MainPageState extends State<MainPage> {
             filled: true,
             fillColor: Colors.white,
             contentPadding: const EdgeInsets.all(15),
-            hintText: 'Braila',
+            hintText: 'Search location',
             hintStyle: const TextStyle(
               color: Color.fromARGB(255, 160, 160, 160),
             ),

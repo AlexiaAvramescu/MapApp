@@ -50,4 +50,8 @@ class MainPageCubit extends Cubit<MainPageState> {
     bool isFavoriteLandmark = await repo!.checkIfFavourite(focusedLandmark: landmark);
     emit(MainPageFocusedLandmark(landmark: landmark, isFavoriteLandmark: isFavoriteLandmark));
   }
+
+  Future<void> onFollowPositionButtonPressed() async {
+    repo!.onFollowPositionButtonPressed();
+  }
 }

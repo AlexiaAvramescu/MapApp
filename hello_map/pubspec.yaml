@@ -18,6 +18,7 @@ dependencies:
   gem_kit:
     path: plugins/gem_kit
 
+  permission_handler:
   cupertino_icons: ^1.0.2
 
 dev_dependencies:

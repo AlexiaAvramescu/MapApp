@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:math';
 import 'dart:typed_data';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:gem_kit/api/gem_addressinfo.dart';
 import 'package:gem_kit/api/gem_coordinates.dart';
@@ -16,9 +17,11 @@ import 'package:gem_kit/api/gem_searchpreferences.dart';
 import 'package:gem_kit/api/gem_types.dart';
 import 'package:gem_kit/gem_kit_basic.dart';
 import 'package:gem_kit/gem_kit_map_controller.dart';
+import 'package:gem_kit/gem_kit_position.dart';
 import 'package:hello_map/landmark_info.dart';
 import 'package:hello_map/repositories/repository.dart';
 import 'package:gem_kit/api/gem_searchservice.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'dart:ui' as ui;
 
 import 'package:hello_map/utility.dart';
@@ -30,6 +33,10 @@ class RepositoryImpl implements Repository {
   LandmarkStore? favoritesStore;
   List<Landmark> favorites = [];
   VoidCallback? updateFavoritesListCallBack;
+
+  late PermissionStatus _locationPermissionStatus = PermissionStatus.denied;
+  late PositionService _positionService;
+  late bool _hasLiveDataSource = false;
 
   late Completer<List<Landmark>> completer;
 
@@ -45,6 +52,7 @@ class RepositoryImpl implements Repository {
 
   @override
   Future<void> loadFromStore() async {
+    PositionService.create(mapController.mapId).then((service) => _positionService = service);
     LandmarkStoreService.create(mapController.mapId).then((value) {
       landmarkStoreService = value;
 
@@ -235,5 +243,37 @@ class RepositoryImpl implements Repository {
     await landmarks.push_back(landmark);
     await mapController.activateHighlight(landmarks, renderSettings: RenderSettings());
     //centerOnCoordinates(landmark.getCoordinates());
+  }
+
+  @override
+  Future<void> onFollowPositionButtonPressed() async {
+    if (kIsWeb) {
+      // On web platform permission are handled differently than other platforms.
+      // The SDK handles the request of permission for location
+      _locationPermissionStatus = PermissionStatus.granted;
+    } else {
+      // For Android & iOS platforms, permission_handler package is used to ask for permissions
+      _locationPermissionStatus = await Permission.locationWhenInUse.request();
+    }
+
+    if (_locationPermissionStatus != PermissionStatus.granted) {
+      return;
+    }
+
+    // After the permission was granted, we can set the live data source (in most cases the GPS)
+    // The data source should be set only once, otherwise we'll get -5 error
+    if (!_hasLiveDataSource) {
+      await _positionService.removeDataSource();
+      await _positionService.setLiveDataSource();
+      _hasLiveDataSource = true;
+    }
+
+    // After data source is set, startFollowingPosition can be safely called
+    if (_locationPermissionStatus == PermissionStatus.granted) {
+      // Optionally, we can set an animation
+      final animation = GemAnimation(type: EAnimation.AnimationLinear);
+
+      mapController.startFollowingPosition(animation: animation);
+    }
   }
 }

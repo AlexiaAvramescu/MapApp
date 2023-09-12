@@ -26,4 +26,5 @@ abstract class Repository {
   Future<bool> onFavoritesTap({required bool isLandmarkFavorite, required Landmark focusedLandmark});
   Future<bool> checkIfFavourite({required Landmark focusedLandmark});
   Future<Landmark?> registerLandmarkTapCallback(Point<num> pos);
+  Future<void> onFollowPositionButtonPressed();
 }
