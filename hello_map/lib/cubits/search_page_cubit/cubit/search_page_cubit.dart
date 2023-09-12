@@ -36,6 +36,5 @@ class SearchPageCubit extends Cubit<SearchPageState> {
 
   Future<String> getAddress(Landmark landmark) => repo!.getAddressFromLandmark(landmark);
 
-  Future<void> onCenterCoordinates(Coordinates coordinates) async =>
-      await repo!.onCenterCoordinatesButtonPressed(coordinates);
+  Future<void> onCenterCoordinates(Coordinates coordinates) async => await repo!.centerOnCoordinates(coordinates);
 }

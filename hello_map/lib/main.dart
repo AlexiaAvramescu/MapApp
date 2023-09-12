@@ -21,7 +21,7 @@ class MyApp extends StatelessWidget {
         BlocProvider<SearchPageCubit>(create: (context) => SearchPageCubit()),
         BlocProvider<FavoritesPageCubit>(create: (context) => FavoritesPageCubit()),
       ],
-      child: MaterialApp(
+      child: const MaterialApp(
         debugShowCheckedModeBanner: false,
         title: 'Hello Map',
         home: MainPage(),

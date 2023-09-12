@@ -3,7 +3,7 @@ import 'dart:math';
 import 'package:bloc/bloc.dart';
 import 'package:gem_kit/api/gem_landmark.dart';
 import 'package:hello_map/controller.dart';
-import 'package:hello_map/panel_info.dart';
+import 'package:hello_map/landmark_info.dart';
 import 'package:hello_map/repositories/repository.dart';
 
 part 'main_page_state.dart';
@@ -16,7 +16,7 @@ class MainPageCubit extends Cubit<MainPageState> {
     repo = Controller.sl.get<Repository>();
   }
 
-  Future<PanelInfo> getInfo() => repo!.getPanelInfo(state.focusedLandmark!);
+  Future<LandmarkInfo> getInfo() => repo!.getPanelInfo(state.focusedLandmark!);
 
   void onCancelLandmarkPanel() {
     repo!.deactivateAllHighlights;

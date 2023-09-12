@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:math';
 import 'dart:typed_data';
 
+import 'package:flutter/material.dart';
 import 'package:gem_kit/api/gem_addressinfo.dart';
 import 'package:gem_kit/api/gem_coordinates.dart';
 import 'package:gem_kit/api/gem_geographicarea.dart';
@@ -13,7 +14,7 @@ import 'package:gem_kit/api/gem_searchpreferences.dart';
 import 'package:gem_kit/api/gem_types.dart';
 import 'package:gem_kit/gem_kit_basic.dart';
 import 'package:gem_kit/gem_kit_map_controller.dart';
-import 'package:hello_map/panel_info.dart';
+import 'package:hello_map/landmark_info.dart';
 import 'package:hello_map/repositories/repository.dart';
 import 'package:gem_kit/api/gem_searchservice.dart';
 import 'dart:ui' as ui;
@@ -25,9 +26,13 @@ class RepositoryImpl implements Repository {
   late SearchService gemSearchService;
   LandmarkStoreService? landmarkStoreService;
   LandmarkStore? favoritesStore;
-  //late List<Landmark> favorites;
+  List<Landmark> favorites = [];
+  VoidCallback? FavoritesUpdateCallBack;
 
   late Completer<List<Landmark>> completer;
+
+  @override
+  set favoritesUpdateCallBack(VoidCallback function) => FavoritesUpdateCallBack = function;
 
   RepositoryImpl({required this.mapController}) {
     SearchService.create(mapController.mapId).then((service) => gemSearchService = service);
@@ -73,7 +78,7 @@ class RepositoryImpl implements Repository {
   }
 
   @override
-  decodeLandmarkIcon(Landmark landmark) {
+  Future<Uint8List?> decodeLandmarkIcon(Landmark landmark) {
     final data = landmark.getImage(100, 100);
     Completer<Uint8List?> c = Completer<Uint8List?>();
 
@@ -103,7 +108,7 @@ class RepositoryImpl implements Repository {
   }
 
   @override
-  Future<void> onCenterCoordinatesButtonPressed(Coordinates coordinates) async {
+  Future<void> centerOnCoordinates(Coordinates coordinates) async {
     final animation = GemAnimation(type: EAnimation.AnimationLinear);
 
     // Use the map controller to center on coordinates
@@ -111,7 +116,7 @@ class RepositoryImpl implements Repository {
   }
 
   @override
-  Future<PanelInfo> getPanelInfo(Landmark focusedLandmark) async {
+  Future<LandmarkInfo> getPanelInfo(Landmark focusedLandmark) async {
     late Uint8List? iconFuture;
     late String nameFuture;
     late Coordinates coordsFuture;
@@ -119,12 +124,12 @@ class RepositoryImpl implements Repository {
     late List<LandmarkCategory> categoriesFuture;
 
     iconFuture = await _decodeLandmarkIcon(focusedLandmark);
-    nameFuture = await focusedLandmark.getName();
-    coordsFuture = await focusedLandmark.getCoordinates();
+    nameFuture = focusedLandmark.getName();
+    coordsFuture = focusedLandmark.getCoordinates();
     coordsFutureText = "${coordsFuture.latitude.toString()}, ${coordsFuture.longitude.toString()}";
-    categoriesFuture = await focusedLandmark.getCategories();
+    categoriesFuture = focusedLandmark.getCategories();
 
-    return PanelInfo(
+    return LandmarkInfo(
         image: iconFuture,
         name: nameFuture,
         categoryName: categoriesFuture.isNotEmpty ? categoriesFuture.first.name! : '',
@@ -132,7 +137,7 @@ class RepositoryImpl implements Repository {
   }
 
   Future<Uint8List?> _decodeLandmarkIcon(Landmark landmark) async {
-    final data = await landmark.getImage(100, 100);
+    final data = landmark.getImage(100, 100);
 
     return decodeImageData(data);
   }
@@ -162,9 +167,12 @@ class RepositoryImpl implements Repository {
   Future<void> onFavoritesTap({required bool isLandmarkFavorite, required Landmark focusedLandmark}) async {
     if (isLandmarkFavorite) {
       await favoritesStore!.removeLandmark(focusedLandmark);
+      favorites.removeWhere((element) => element == focusedLandmark);
     } else {
       await favoritesStore!.addLandmark(focusedLandmark);
+      favorites.add(focusedLandmark);
     }
+    FavoritesUpdateCallBack!();
   }
 
   @override
@@ -189,4 +197,7 @@ class RepositoryImpl implements Repository {
 
     return lmk;
   }
+
+  @override
+  List<Landmark> getFavorites() => favorites;
 }

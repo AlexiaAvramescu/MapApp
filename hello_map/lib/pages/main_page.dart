@@ -10,7 +10,7 @@ import 'package:hello_map/cubits/search_page_cubit/cubit/search_page_cubit.dart'
 import 'package:hello_map/landmark_panel.dart';
 import 'package:hello_map/pages/favorites_page.dart';
 import 'package:hello_map/pages/search_page.dart';
-import 'package:hello_map/panel_info.dart';
+import 'package:hello_map/landmark_info.dart';
 
 class MainPage extends StatefulWidget {
   const MainPage({super.key});
@@ -62,7 +62,7 @@ class _MainPageState extends State<MainPage> {
                   return Positioned(
                     bottom: 30,
                     left: 10,
-                    child: FutureBuilder<PanelInfo>(
+                    child: FutureBuilder<LandmarkInfo>(
                         future: context.read<MainPageCubit>().getInfo(),
                         builder: (context, snapshot) {
                           if (!snapshot.hasData) {

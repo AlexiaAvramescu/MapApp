@@ -1,4 +1,3 @@
-import 'dart:developer';
 import 'dart:typed_data';
 
 import 'package:flutter/cupertino.dart';
@@ -35,7 +34,6 @@ class FavoritesPage extends StatelessWidget {
         },
       ),
     );
-    ;
   }
 }
 
