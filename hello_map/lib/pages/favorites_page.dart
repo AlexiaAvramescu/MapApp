@@ -52,8 +52,9 @@ class _FavoritesItemState extends State<FavoritesItem> {
   Widget build(BuildContext context) {
     return SizedBox(
       child: InkWell(
-        onTap: () {
+        onTap: () async {
           Navigator.of(context).pop(widget.landmark);
+          await context.read<FavoritesPageCubit>().onCenterCoordinates(widget.landmark.getCoordinates());
         },
         child: Column(
           children: [

@@ -17,13 +17,19 @@ class FavoritesPageCubit extends Cubit<FavoritesPageState> {
   void setRepo() {
     repo = Controller.sl.get<Repository>();
     repo!.favoritesUpdateCallBack = updateFavorites;
+    repo!.loadFromStore();
   }
 
   Future<Uint8List?> decodeLandmarkIcon(Landmark landmark) => repo!.decodeLandmarkIcon(landmark);
   Future<Coordinates> getCoordinates(Landmark landmark) async => landmark.getCoordinates();
   void updateFavorites() async {
-    var favorites = repo!.getFavorites();
-
-    emit(FavoritesPageWithItems(landmarks: favorites));
+    var favorites = repo!.getFavorites().reversed.toList();
+    if (favorites.isEmpty) {
+      emit(FavoritesPageInitial());
+    } else {
+      emit(FavoritesPageWithItems(landmarks: favorites));
+    }
   }
+
+  Future<void> onCenterCoordinates(Coordinates coordinates) async => await repo!.centerOnCoordinates(coordinates);
 }

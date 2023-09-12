@@ -10,6 +10,8 @@ import 'package:gem_kit/api/gem_landmark.dart';
 import 'package:gem_kit/api/gem_landmarkstore.dart';
 import 'package:gem_kit/api/gem_landmarkstoreservice.dart';
 import 'package:gem_kit/api/gem_mapviewpreferences.dart';
+import 'package:gem_kit/api/gem_mapviewrendersettings.dart';
+import 'package:gem_kit/api/gem_routingservice.dart';
 import 'package:gem_kit/api/gem_searchpreferences.dart';
 import 'package:gem_kit/api/gem_types.dart';
 import 'package:gem_kit/gem_kit_basic.dart';
@@ -36,14 +38,27 @@ class RepositoryImpl implements Repository {
 
   RepositoryImpl({required this.mapController}) {
     SearchService.create(mapController.mapId).then((service) => gemSearchService = service);
+  }
+
+  @override
+  Future<void> loadFromStore() async {
     LandmarkStoreService.create(mapController.mapId).then((value) {
       landmarkStoreService = value;
 
       String favoritesStoreName = 'Favorites';
 
-      landmarkStoreService!.getLandmarkStoreByName(favoritesStoreName).then((value) => favoritesStore = value);
+      landmarkStoreService!.getLandmarkStoreByName(favoritesStoreName).then((value) async {
+        value ??= await landmarkStoreService!.createLandmarkStore(favoritesStoreName);
+        favoritesStore = value;
 
-      landmarkStoreService!.createLandmarkStore(favoritesStoreName).then((value) => favoritesStore ??= value);
+        final landmarkList = await favoritesStore!.getLandmarks();
+        final size = await landmarkList.size();
+
+        for (int i = 0; i < size; i++) {
+          favorites.add(await landmarkList.at(i));
+        }
+        FavoritesUpdateCallBack!();
+      });
     });
   }
 
@@ -112,7 +127,12 @@ class RepositoryImpl implements Repository {
     final animation = GemAnimation(type: EAnimation.AnimationLinear);
 
     // Use the map controller to center on coordinates
-    await mapController.centerOnCoordinates(coordinates, animation: animation);
+    await mapController.centerOnCoordinates(
+      coordinates,
+      animation: animation,
+      viewAngle: 0,
+      xy: XyType(x: mapController.viewport.width ~/ 2, y: mapController.viewport.height ~/ 2),
+    );
   }
 
   @override
@@ -200,4 +220,12 @@ class RepositoryImpl implements Repository {
 
   @override
   List<Landmark> getFavorites() => favorites;
+
+  @override
+  Future<void> centerOnLandmark(Landmark landmark) async {
+    LandmarkList landmarks = await LandmarkList.create(mapController.mapId);
+    await landmarks.push_back(landmark);
+    await mapController.activateHighlight(landmarks, renderSettings: RenderSettings());
+    //centerOnCoordinates(landmark.getCoordinates());
+  }
 }

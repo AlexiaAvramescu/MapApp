@@ -41,4 +41,11 @@ class MainPageCubit extends Cubit<MainPageState> {
       }
     }
   }
+
+  Future<void> centerOnLandmark(Landmark landmark) async {
+    await repo!.centerOnLandmark(landmark);
+
+    bool isFavoriteLandmark = await repo!.checkIfFavourite(focusedLandmark: landmark);
+    emit(MainPageFocusedLandmark(landmark: landmark, isFavoriteLandmark: isFavoriteLandmark));
+  }
 }

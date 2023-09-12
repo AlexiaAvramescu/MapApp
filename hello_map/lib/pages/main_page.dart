@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:gem_kit/api/gem_landmark.dart';
 import 'package:gem_kit/api/gem_sdksettings.dart';
 import 'package:gem_kit/gem_kit_map_controller.dart';
 import 'package:gem_kit/widget/gem_kit_map.dart';
@@ -101,9 +102,12 @@ class _MainPageState extends State<MainPage> {
             borderRadius: BorderRadius.circular(20),
           ),
           child: IconButton(
-              onPressed: () {
-                Navigator.push(context, MaterialPageRoute(builder: (context) => const FavoritesPage()));
-              }, //cubit onFavorits
+              onPressed: () async {
+                final result =
+                    await Navigator.push(context, MaterialPageRoute(builder: (context) => const FavoritesPage()));
+                if (result is! Landmark) return;
+                await context.read<MainPageCubit>().centerOnLandmark(result);
+              },
               iconSize: 30,
               icon: const Icon(
                 Icons.favorite_border,

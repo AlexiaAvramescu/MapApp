@@ -13,10 +13,12 @@ abstract class Repository {
       {SearchPreferences? preferences, RectangleGeographicArea? geographicArea});
 
   set favoritesUpdateCallBack(VoidCallback function);
+  Future<void> loadFromStore();
   List<Landmark> getFavorites();
   Coordinates transformScreenToWgs(double x, double y);
   Future<Uint8List?> decodeLandmarkIcon(Landmark landmark);
   Future<String> getAddressFromLandmark(Landmark landmark);
+  Future<void> centerOnLandmark(Landmark landmark);
   Future<void> centerOnCoordinates(Coordinates coordinates);
   Future<LandmarkInfo> getPanelInfo(Landmark focusedLandmark);
   void deactivateAllHighlights();
