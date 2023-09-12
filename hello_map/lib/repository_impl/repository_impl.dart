@@ -29,16 +29,19 @@ class RepositoryImpl implements Repository {
   LandmarkStoreService? landmarkStoreService;
   LandmarkStore? favoritesStore;
   List<Landmark> favorites = [];
-  VoidCallback? FavoritesUpdateCallBack;
+  VoidCallback? updateFavoritesListCallBack;
 
   late Completer<List<Landmark>> completer;
 
   @override
-  set favoritesUpdateCallBack(VoidCallback function) => FavoritesUpdateCallBack = function;
+  set favoritesUpdateCallBack(VoidCallback function) => updateFavoritesListCallBack = function;
 
   RepositoryImpl({required this.mapController}) {
     SearchService.create(mapController.mapId).then((service) => gemSearchService = service);
   }
+
+  @override
+  void updateFavoritesPageList() => updateFavoritesListCallBack!();
 
   @override
   Future<void> loadFromStore() async {
@@ -57,7 +60,7 @@ class RepositoryImpl implements Repository {
         for (int i = 0; i < size; i++) {
           favorites.add(await landmarkList.at(i));
         }
-        FavoritesUpdateCallBack!();
+        updateFavoritesListCallBack!();
       });
     });
   }
@@ -183,16 +186,21 @@ class RepositoryImpl implements Repository {
     return false;
   }
 
+  bool isSameLandmark(Landmark a, Landmark b) {
+    return a.getCoordinates().latitude == b.getCoordinates().latitude &&
+        a.getCoordinates().longitude == b.getCoordinates().longitude;
+  }
+
   @override
-  Future<void> onFavoritesTap({required bool isLandmarkFavorite, required Landmark focusedLandmark}) async {
+  Future<bool> onFavoritesTap({required bool isLandmarkFavorite, required Landmark focusedLandmark}) async {
     if (isLandmarkFavorite) {
       await favoritesStore!.removeLandmark(focusedLandmark);
-      favorites.removeWhere((element) => element == focusedLandmark);
+      favorites.removeWhere((element) => isSameLandmark(element, focusedLandmark));
     } else {
       await favoritesStore!.addLandmark(focusedLandmark);
       favorites.add(focusedLandmark);
     }
-    FavoritesUpdateCallBack!();
+    return !isLandmarkFavorite;
   }
 
   @override

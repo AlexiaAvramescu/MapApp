@@ -15,6 +15,7 @@ abstract class Repository {
   set favoritesUpdateCallBack(VoidCallback function);
   Future<void> loadFromStore();
   List<Landmark> getFavorites();
+  void updateFavoritesPageList();
   Coordinates transformScreenToWgs(double x, double y);
   Future<Uint8List?> decodeLandmarkIcon(Landmark landmark);
   Future<String> getAddressFromLandmark(Landmark landmark);
@@ -22,7 +23,7 @@ abstract class Repository {
   Future<void> centerOnCoordinates(Coordinates coordinates);
   Future<LandmarkInfo> getPanelInfo(Landmark focusedLandmark);
   void deactivateAllHighlights();
-  Future<void> onFavoritesTap({required bool isLandmarkFavorite, required Landmark focusedLandmark});
+  Future<bool> onFavoritesTap({required bool isLandmarkFavorite, required Landmark focusedLandmark});
   Future<bool> checkIfFavourite({required Landmark focusedLandmark});
   Future<Landmark?> registerLandmarkTapCallback(Point<num> pos);
 }

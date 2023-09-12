@@ -25,8 +25,10 @@ class MainPageCubit extends Cubit<MainPageState> {
   }
 
   void onFavoritesTap() async {
-    await repo!.onFavoritesTap(isLandmarkFavorite: state.isLandmarkFavorite, focusedLandmark: state.focusedLandmark!);
-    bool value = await repo!.checkIfFavourite(focusedLandmark: state.focusedLandmark!);
+    bool value = await repo!
+        .onFavoritesTap(isLandmarkFavorite: state.isLandmarkFavorite, focusedLandmark: state.focusedLandmark!);
+
+    repo!.updateFavoritesPageList();
 
     emit(MainPageState(focusedLandmark: state.focusedLandmark, isLandmarkFavorite: value));
   }
