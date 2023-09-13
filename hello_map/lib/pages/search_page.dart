@@ -2,6 +2,7 @@ import 'dart:typed_data';
 
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:gem_kit/api/gem_landmark.dart';
 import 'package:hello_map/cubits/search_page_cubit/cubit/search_page_cubit.dart';
@@ -15,7 +16,7 @@ class SearchPage extends StatelessWidget {
       body: Column(
         children: [
           Container(
-            margin: const EdgeInsets.only(top: 70, left: 30, right: 20),
+            margin: const EdgeInsets.only(top: 60, left: 30, right: 20),
             decoration: const BoxDecoration(boxShadow: [
               BoxShadow(
                 color: Color.fromARGB(255, 134, 134, 134),
@@ -30,6 +31,14 @@ class SearchPage extends StatelessWidget {
                 }
               }, //move to search page
               child: TextField(
+                onChanged: (text) {
+                  if (text.isNotEmpty) {
+                    final x = MediaQuery.of(context).size.width / 2;
+                    final y = MediaQuery.of(context).size.height / 2;
+                    final coordinates = context.read<SearchPageCubit>().getRelevantCoordinates(x, y);
+                    context.read<SearchPageCubit>().onSubmited(text, coordinates);
+                  }
+                },
                 onSubmitted: (text) {
                   final x = MediaQuery.of(context).size.width / 2;
                   final y = MediaQuery.of(context).size.height / 2;
@@ -102,7 +111,7 @@ class _SearchResultItemState extends State<SearchResultItem> {
     return SizedBox(
       child: InkWell(
         onTap: () async {
-          Navigator.of(context).pop(widget.landmark);
+          Navigator.of(context).pop();
           await context.read<SearchPageCubit>().onCenterCoordinates(widget.landmark.getCoordinates());
         },
         child: Column(

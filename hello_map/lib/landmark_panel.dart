@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 class LandmarkPanel extends StatelessWidget {
   final VoidCallback onCancelTap;
   final VoidCallback onFavoritesTap;
+  final VoidCallback onRouteTap;
   final String name;
   final Uint8List img;
   final String coords;
@@ -14,6 +15,7 @@ class LandmarkPanel extends StatelessWidget {
       {super.key,
       required this.onCancelTap,
       required this.onFavoritesTap,
+      required this.onRouteTap,
       required this.name,
       required this.img,
       required this.coords,
@@ -82,7 +84,7 @@ class LandmarkPanel extends StatelessWidget {
                     Align(
                       alignment: Alignment.topRight,
                       child: IconButton(
-                        padding: EdgeInsets.zero,
+                        padding: EdgeInsets.only(right: 10),
                         onPressed: onCancelTap,
                         icon: const Icon(
                           Icons.cancel,
@@ -92,12 +94,21 @@ class LandmarkPanel extends StatelessWidget {
                       ),
                     ),
                     IconButton(
-                      padding: EdgeInsets.zero,
+                      padding: EdgeInsets.only(top: 1),
                       onPressed: onFavoritesTap,
                       icon: Icon(
                         isFavoriteLandmark ? Icons.favorite : Icons.favorite_outline,
                         color: Colors.red,
-                        size: 50,
+                        size: 40,
+                      ),
+                    ),
+                    IconButton(
+                      padding: EdgeInsets.only(top: 1),
+                      onPressed: onRouteTap,
+                      icon: const Icon(
+                        Icons.directions,
+                        color: Colors.red,
+                        size: 40,
                       ),
                     )
                   ],

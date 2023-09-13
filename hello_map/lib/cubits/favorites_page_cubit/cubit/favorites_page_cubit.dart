@@ -17,7 +17,7 @@ class FavoritesPageCubit extends Cubit<FavoritesPageState> {
   void setRepo() {
     repo = Controller.sl.get<Repository>();
     repo!.favoritesUpdateCallBack = updateFavorites;
-    repo!.loadFromStore();
+    repo!.initializeServices();
   }
 
   Future<Uint8List?> decodeLandmarkIcon(Landmark landmark) => repo!.decodeLandmarkIcon(landmark);

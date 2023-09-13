@@ -1,6 +1,6 @@
 import 'dart:async';
+
 import 'dart:math';
-import 'dart:typed_data';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -12,6 +12,8 @@ import 'package:gem_kit/api/gem_landmarkstore.dart';
 import 'package:gem_kit/api/gem_landmarkstoreservice.dart';
 import 'package:gem_kit/api/gem_mapviewpreferences.dart';
 import 'package:gem_kit/api/gem_mapviewrendersettings.dart';
+import 'package:gem_kit/api/gem_progresslistener.dart';
+import 'package:gem_kit/api/gem_routingpreferences.dart';
 import 'package:gem_kit/api/gem_routingservice.dart';
 import 'package:gem_kit/api/gem_searchpreferences.dart';
 import 'package:gem_kit/api/gem_types.dart';
@@ -22,13 +24,17 @@ import 'package:hello_map/landmark_info.dart';
 import 'package:hello_map/repositories/repository.dart';
 import 'package:gem_kit/api/gem_searchservice.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:gem_kit/api/gem_routingservice.dart' as gem;
 import 'dart:ui' as ui;
 
 import 'package:hello_map/utility.dart';
 
 class RepositoryImpl implements Repository {
   final GemMapController mapController;
+
   late SearchService gemSearchService;
+  ProgressListener? searchProgress;
+
   LandmarkStoreService? landmarkStoreService;
   LandmarkStore? favoritesStore;
   List<Landmark> favorites = [];
@@ -37,6 +43,9 @@ class RepositoryImpl implements Repository {
   late PermissionStatus _locationPermissionStatus = PermissionStatus.denied;
   late PositionService _positionService;
   late bool _hasLiveDataSource = false;
+
+  late gem.RoutingService routingService;
+  List<gem.Route> shownRoutes = [];
 
   late Completer<List<Landmark>> completer;
 
@@ -51,10 +60,11 @@ class RepositoryImpl implements Repository {
   void updateFavoritesPageList() => updateFavoritesListCallBack!();
 
   @override
-  Future<void> loadFromStore() async {
+  Future<void> initializeServices() async {
+    gem.RoutingService.create(mapController.mapId).then((service) => routingService = service);
     PositionService.create(mapController.mapId).then((service) => _positionService = service);
-    LandmarkStoreService.create(mapController.mapId).then((value) {
-      landmarkStoreService = value;
+    LandmarkStoreService.create(mapController.mapId).then((service) {
+      landmarkStoreService = service;
 
       String favoritesStoreName = 'Favorites';
 
@@ -82,7 +92,9 @@ class RepositoryImpl implements Repository {
       {SearchPreferences? preferences, RectangleGeographicArea? geographicArea}) async {
     completer = Completer<List<Landmark>>();
 
-    gemSearchService.search(text, coordinates, (err, results) async {
+    //if (searchProgress != null) await gemSearchService.cancelSearch(searchProgress!);
+
+    searchProgress = await gemSearchService.search(text, coordinates, (err, results) async {
       if (err != GemError.success || results == null) {
         completer.complete([]);
         return;
@@ -147,27 +159,27 @@ class RepositoryImpl implements Repository {
   }
 
   @override
-  Future<LandmarkInfo> getPanelInfo(Landmark focusedLandmark) async {
+  Future<LandmarkInfo> getLandmarkInfo(Landmark focusedLandmark) async {
     late Uint8List? iconFuture;
-    late String nameFuture;
-    late Coordinates coordsFuture;
-    late String coordsFutureText;
-    late List<LandmarkCategory> categoriesFuture;
+    late String name;
+    late Coordinates coords;
+    late String coordsText;
+    late List<LandmarkCategory> categories;
 
     iconFuture = await _decodeLandmarkIcon(focusedLandmark);
-    nameFuture = focusedLandmark.getName();
-    coordsFuture = focusedLandmark.getCoordinates();
-    coordsFutureText = "${coordsFuture.latitude.toString()}, ${coordsFuture.longitude.toString()}";
-    categoriesFuture = focusedLandmark.getCategories();
+    name = focusedLandmark.getName();
+    coords = focusedLandmark.getCoordinates();
+    coordsText = "${coords.latitude.toString()}, ${coords.longitude.toString()}";
+    categories = focusedLandmark.getCategories();
 
     return LandmarkInfo(
         image: iconFuture,
-        name: nameFuture,
-        categoryName: categoriesFuture.isNotEmpty ? categoriesFuture.first.name! : '',
-        formattedCoords: coordsFutureText);
+        name: name,
+        categoryName: categories.isNotEmpty ? categories.first.name! : '',
+        formattedCoords: coordsText);
   }
 
-  Future<Uint8List?> _decodeLandmarkIcon(Landmark landmark) async {
+  Future<Uint8List?> _decodeLandmarkIcon(Landmark landmark) {
     final data = landmark.getImage(100, 100);
 
     return decodeImageData(data);
@@ -246,7 +258,7 @@ class RepositoryImpl implements Repository {
   }
 
   @override
-  Future<void> onFollowPositionButtonPressed() async {
+  Future<void> onFollowPositionButtonPressed(void Function(Coordinates) mapUpdateCallback) async {
     if (kIsWeb) {
       // On web platform permission are handled differently than other platforms.
       // The SDK handles the request of permission for location
@@ -272,8 +284,73 @@ class RepositoryImpl implements Repository {
     if (_locationPermissionStatus == PermissionStatus.granted) {
       // Optionally, we can set an animation
       final animation = GemAnimation(type: EAnimation.AnimationLinear);
+      _positionService.addPositionListener((p0) {
+        mapUpdateCallback(p0.coordinates);
+      }); //Callback to update map view to the current pos
 
       mapController.startFollowingPosition(animation: animation);
     }
+  }
+
+  String convertDistance(int meters) {
+    if (meters >= 1000) {
+      double kilometers = meters / 1000;
+      return '${kilometers.toStringAsFixed(1)} km';
+    } else {
+      return '${meters.toString()} m';
+    }
+  }
+
+  String convertDuration(int seconds) {
+    int hours = seconds ~/ 3600; // Number of whole hours
+    int minutes = (seconds % 3600) ~/ 60; // Number of whole minutes
+
+    String hoursText = (hours > 0) ? '$hours h ' : ''; // Hours text
+    String minutesText = '$minutes min'; // Minutes text
+
+    return hoursText + minutesText;
+  }
+
+  @override
+  void calculateRoute(Landmark destiantion) async {
+    // Create a landmark list
+    final landmarkWaypoints = await gem.LandmarkList.create(mapController.mapId);
+
+    landmarkWaypoints.push_back(destiantion);
+
+    final routePreferences = RoutePreferences();
+
+    var result = await routingService.calculateRoute(landmarkWaypoints, routePreferences, (err, routes) async {
+      if (err != GemError.success || routes == null) {
+        return;
+      } else {
+        // Get the controller's preferences
+        final mapViewPreferences = mapController.preferences();
+        // Get the routes from the preferences
+        final routesMap = await mapViewPreferences.routes();
+        //Get the number of routes
+        final routesSize = await routes.size();
+
+        for (int i = 0; i < routesSize; i++) {
+          final route = await routes.at(i);
+          shownRoutes.add(route);
+
+          final timeDistance = await route.getTimeDistance();
+
+          final totalDistance = convertDistance(timeDistance.unrestrictedDistanceM + timeDistance.restrictedDistanceM);
+
+          final totalTime = convertDuration(timeDistance.unrestrictedTimeS + timeDistance.restrictedTimeS);
+          // Add labels to the routes
+          await routesMap.add(route, i == 0, label: '$totalDistance \n $totalTime');
+        }
+        // Select the first route as the main one
+        final mainRoute = await routes.at(0);
+
+        await mapController.centerOnRoute(mainRoute);
+      }
+    });
+    //haveRoutes = true;
+
+    //return result;
   }
 }

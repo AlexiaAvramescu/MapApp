@@ -13,7 +13,7 @@ abstract class Repository {
       {SearchPreferences? preferences, RectangleGeographicArea? geographicArea});
 
   set favoritesUpdateCallBack(VoidCallback function);
-  Future<void> loadFromStore();
+  Future<void> initializeServices();
   List<Landmark> getFavorites();
   void updateFavoritesPageList();
   Coordinates transformScreenToWgs(double x, double y);
@@ -21,10 +21,11 @@ abstract class Repository {
   Future<String> getAddressFromLandmark(Landmark landmark);
   Future<void> centerOnLandmark(Landmark landmark);
   Future<void> centerOnCoordinates(Coordinates coordinates);
-  Future<LandmarkInfo> getPanelInfo(Landmark focusedLandmark);
+  Future<LandmarkInfo> getLandmarkInfo(Landmark focusedLandmark);
   void deactivateAllHighlights();
   Future<bool> onFavoritesTap({required bool isLandmarkFavorite, required Landmark focusedLandmark});
   Future<bool> checkIfFavourite({required Landmark focusedLandmark});
   Future<Landmark?> registerLandmarkTapCallback(Point<num> pos);
-  Future<void> onFollowPositionButtonPressed();
+  Future<void> onFollowPositionButtonPressed(void Function(Coordinates) mapUpdateCallback);
+  void calculateRoute(Landmark destiantion);
 }

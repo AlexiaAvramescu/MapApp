@@ -11,6 +11,7 @@ import 'package:hello_map/cubits/main_page_cubit/main_page_cubit.dart';
 import 'package:hello_map/cubits/search_page_cubit/cubit/search_page_cubit.dart';
 import 'package:hello_map/landmark_panel.dart';
 import 'package:hello_map/pages/favorites_page.dart';
+import 'package:hello_map/pages/route_page.dart';
 import 'package:hello_map/pages/search_page.dart';
 import 'package:hello_map/landmark_info.dart';
 
@@ -25,7 +26,7 @@ class _MainPageState extends State<MainPage> {
   late GemMapController mapController;
 
   final _token =
-      'eyJhbGciOiJFUzI1NiIsInR5cCI6IkpXVCJ9.eyJhdWQiOiIzYzU4MjE3MC03Y2M0LTRlOWItYjBhNi1kMmFiOTdhNmVlZGMiLCJleHAiOjE2OTQ1NTI0MDAsImlzcyI6IkdlbmVyYWwgTWFnaWMiLCJqdGkiOiI1MTI1N2Q0Ny03OTVhLTQwZjgtODIxZi1mN2U4MTA3OGZiZjIiLCJuYmYiOjE2OTM5ODMyOTV9.vNsgUkJL5EVUDv7pd0LQ-4nE5iWoQoGN78jHH9m79tcx645ThpBVdkqrVTzNa4m7sCyFm0lvaCILXID22rCOTA';
+      'eyJhbGciOiJFUzI1NiIsInR5cCI6IkpXVCJ9.eyJhdWQiOiIzYzU4MjE3MC03Y2M0LTRlOWItYjBhNi1kMmFiOTdhNmVlZGMiLCJleHAiOjE4MjU4ODQwMDAsImlzcyI6IkdlbmVyYWwgTWFnaWMiLCJqdGkiOiJmNmI2NzRkOC02YTEwLTQyMmEtYmFmYi0zNmQzYzFhNGNiM2IiLCJuYmYiOjE2OTQ1OTE5NDV9.lBjeLX3XcEhEXpRk1j0LO6YFE85eDeht9fNXMlhGQ0zfGe2I3zgA1Z_QXvKSASFGBfR3nqkS8UBjZQwVchURvQ';
 
   @override
   void initState() {
@@ -56,6 +57,7 @@ class _MainPageState extends State<MainPage> {
               onMapCreated: onMapCreated,
             ),
             _searchBar(context),
+            _routesButton(context),
             _centerOnPositionButton(),
             _favoritesButton(),
             BlocBuilder<MainPageCubit, MainPageState>(
@@ -73,9 +75,10 @@ class _MainPageState extends State<MainPage> {
                           return LandmarkPanel(
                             onCancelTap: () => context.read<MainPageCubit>().onCancelLandmarkPanel(),
                             onFavoritesTap: () => context.read<MainPageCubit>().onFavoritesTap(),
+                            onRouteTap: () => 0, //context.read<MainPage>(). ,
                             isFavoriteLandmark: state.isLandmarkFavorite,
                             coords: snapshot.data!.formattedCoords,
-                            category: snapshot.data!.name,
+                            category: snapshot.data!.categoryName,
                             img: snapshot.data!.image!,
                             name: snapshot.data!.name,
                           );
@@ -92,11 +95,35 @@ class _MainPageState extends State<MainPage> {
     );
   }
 
+  Align _routesButton(BuildContext context) {
+    return Align(
+      alignment: Alignment.topRight,
+      child: Padding(
+        padding: const EdgeInsets.only(right: 20, top: 60),
+        child: Container(
+          decoration: BoxDecoration(
+            color: const Color.fromARGB(255, 81, 138, 185),
+            borderRadius: BorderRadius.circular(20),
+          ),
+          child: IconButton(
+              onPressed: () {
+                Navigator.push(context, MaterialPageRoute(builder: (context) => const RoutePage()));
+              },
+              iconSize: 30,
+              icon: const Icon(
+                Icons.directions,
+                color: Colors.white,
+              )),
+        ),
+      ),
+    );
+  }
+
   Align _favoritesButton() {
     return Align(
       alignment: Alignment.bottomLeft,
       child: Padding(
-        padding: const EdgeInsets.all(30),
+        padding: const EdgeInsets.only(left: 20, bottom: 30),
         child: Container(
           decoration: BoxDecoration(
             color: const Color.fromARGB(255, 81, 138, 185),
@@ -123,7 +150,7 @@ class _MainPageState extends State<MainPage> {
     return Align(
       alignment: Alignment.bottomRight,
       child: Padding(
-        padding: const EdgeInsets.all(30),
+        padding: const EdgeInsets.only(right: 20, bottom: 30),
         child: Container(
           decoration: BoxDecoration(
             color: const Color.fromARGB(255, 81, 138, 185),
@@ -132,7 +159,7 @@ class _MainPageState extends State<MainPage> {
           child: IconButton(
               onPressed: () {
                 context.read<MainPageCubit>().onFollowPositionButtonPressed();
-              }, //cubit onCenterCoordinatesButtonPressed
+              },
               iconSize: 30,
               icon: const Icon(
                 CupertinoIcons.location,
@@ -145,7 +172,7 @@ class _MainPageState extends State<MainPage> {
 
   Container _searchBar(BuildContext context) {
     return Container(
-      margin: const EdgeInsets.only(top: 70, left: 30, right: 20),
+      margin: const EdgeInsets.only(top: 60, left: 20, right: 80),
       decoration: const BoxDecoration(boxShadow: [
         BoxShadow(
           color: Color.fromARGB(255, 134, 134, 134),

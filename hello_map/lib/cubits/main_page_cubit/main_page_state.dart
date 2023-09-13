@@ -3,7 +3,8 @@ part of 'main_page_cubit.dart';
 final class MainPageState {
   Landmark? focusedLandmark;
   bool isLandmarkFavorite;
-  MainPageState({this.focusedLandmark, this.isLandmarkFavorite = false});
+  Coordinates? currentPosition;
+  MainPageState({this.focusedLandmark, this.isLandmarkFavorite = false, this.currentPosition});
 }
 
 final class MainPageInitial extends MainPageState {

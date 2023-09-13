@@ -1,6 +1,7 @@
 import 'dart:math';
 
 import 'package:bloc/bloc.dart';
+import 'package:gem_kit/api/gem_coordinates.dart';
 import 'package:gem_kit/api/gem_landmark.dart';
 import 'package:hello_map/controller.dart';
 import 'package:hello_map/landmark_info.dart';
@@ -16,7 +17,7 @@ class MainPageCubit extends Cubit<MainPageState> {
     repo = Controller.sl.get<Repository>();
   }
 
-  Future<LandmarkInfo> getInfo() => repo!.getPanelInfo(state.focusedLandmark!);
+  Future<LandmarkInfo> getInfo() => repo!.getLandmarkInfo(state.focusedLandmark!);
 
   void onCancelLandmarkPanel() {
     repo!.deactivateAllHighlights;
@@ -51,7 +52,15 @@ class MainPageCubit extends Cubit<MainPageState> {
     emit(MainPageFocusedLandmark(landmark: landmark, isFavoriteLandmark: isFavoriteLandmark));
   }
 
+  void mapViewUpdate(Coordinates coordinates) {
+    emit(MainPageState(currentPosition: coordinates));
+  }
+
   Future<void> onFollowPositionButtonPressed() async {
-    repo!.onFollowPositionButtonPressed();
+    repo!.onFollowPositionButtonPressed(mapViewUpdate);
+  }
+
+  void onRouteTap() {
+    repo!.calculateRoute(state.focusedLandmark!);
   }
 }

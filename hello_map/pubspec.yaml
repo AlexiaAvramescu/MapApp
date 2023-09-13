@@ -15,6 +15,7 @@ dependencies:
   bloc:
   get_it:
 
+
   gem_kit:
     path: plugins/gem_kit
 
