@@ -321,16 +321,25 @@ class RepositoryImpl implements Repository {
     return hoursText + minutesText;
   }
 
+  removeRoutes(List<gem.Route> routes) async {
+    final prefs = mapController.preferences();
+    final routesMap = await prefs.routes();
+
+    for (final route in routes) {
+      routesMap.remove(route);
+    }
+  }
+
   @override
   void calculateRoute(Landmark destiantion) async {
+    await removeRoutes(shownRoutes);
+
     await getLocationPermission();
 
     // Create a landmark list
     final landmarkWaypoints = await gem.LandmarkList.create(mapController.mapId);
 
     landmarkWaypoints.push_back(destiantion);
-
-    //if(currentPosition == null)
 
     var landmark = Landmark.create();
     await landmark
@@ -368,7 +377,5 @@ class RepositoryImpl implements Repository {
         await mapController.centerOnRoute(mainRoute);
       }
     });
-
-    //return result;
   }
 }

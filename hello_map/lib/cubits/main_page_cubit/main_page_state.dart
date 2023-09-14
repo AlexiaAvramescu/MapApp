@@ -16,3 +16,7 @@ final class MainPageFocusedLandmark extends MainPageState {
   MainPageFocusedLandmark({required Landmark landmark, bool isFavoriteLandmark = false})
       : super(focusedLandmark: landmark, isLandmarkFavorite: isFavoriteLandmark);
 }
+
+final class MainPageHasRoutes extends MainPageState {
+  MainPageHasRoutes() : super(hasRoutes: true);
+}

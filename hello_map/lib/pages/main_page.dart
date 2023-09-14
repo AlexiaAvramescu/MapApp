@@ -56,10 +56,73 @@ class _MainPageState extends State<MainPage> {
             GemMap(
               onMapCreated: onMapCreated,
             ),
-            _searchBar(context),
-            _routesButton(context),
-            _centerOnPositionButton(),
-            _favoritesButton(),
+            SearchBar(),
+            Align(
+              alignment: Alignment.topRight,
+              child: Padding(
+                padding: const EdgeInsets.only(right: 20, top: 60),
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: const Color.fromARGB(255, 81, 138, 185),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: IconButton(
+                      onPressed: () {
+                        Navigator.push(context, MaterialPageRoute(builder: (context) => const RoutePage()));
+                      },
+                      iconSize: 30,
+                      icon: const Icon(
+                        Icons.directions,
+                        color: Colors.white,
+                      )),
+                ),
+              ),
+            ),
+            Align(
+              alignment: Alignment.bottomRight,
+              child: Padding(
+                padding: const EdgeInsets.only(right: 20, bottom: 30),
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: const Color.fromARGB(255, 81, 138, 185),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: IconButton(
+                      onPressed: () {
+                        context.read<MainPageCubit>().onFollowPositionButtonPressed();
+                      },
+                      iconSize: 30,
+                      icon: const Icon(
+                        CupertinoIcons.location,
+                        color: Colors.white,
+                      )),
+                ),
+              ),
+            ),
+            Align(
+              alignment: Alignment.bottomLeft,
+              child: Padding(
+                padding: const EdgeInsets.only(left: 20, bottom: 30),
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: const Color.fromARGB(255, 81, 138, 185),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: IconButton(
+                      onPressed: () async {
+                        final result = await Navigator.push(
+                            context, MaterialPageRoute(builder: (context) => const FavoritesPage()));
+                        if (result is! Landmark) return;
+                        await context.read<MainPageCubit>().centerOnLandmark(result);
+                      },
+                      iconSize: 30,
+                      icon: const Icon(
+                        Icons.favorite_border,
+                        color: Colors.white,
+                      )),
+                ),
+              ),
+            ),
             BlocBuilder<MainPageCubit, MainPageState>(
               builder: (context, state) {
                 if (state.focusedLandmark != null) {
@@ -75,7 +138,7 @@ class _MainPageState extends State<MainPage> {
                           return LandmarkPanel(
                             onCancelTap: () => context.read<MainPageCubit>().onCancelLandmarkPanel(),
                             onFavoritesTap: () => context.read<MainPageCubit>().onFavoritesTap(),
-                            onRouteTap: () => context.read<MainPageCubit>().onRouteTap(), //context.read<MainPage>(). ,
+                            onRouteTap: () => context.read<MainPageCubit>().onRouteTap(),
                             isFavoriteLandmark: state.isLandmarkFavorite,
                             coords: snapshot.data!.formattedCoords,
                             category: snapshot.data!.categoryName,
@@ -94,83 +157,15 @@ class _MainPageState extends State<MainPage> {
       ),
     );
   }
+}
 
-  Align _routesButton(BuildContext context) {
-    return Align(
-      alignment: Alignment.topRight,
-      child: Padding(
-        padding: const EdgeInsets.only(right: 20, top: 60),
-        child: Container(
-          decoration: BoxDecoration(
-            color: const Color.fromARGB(255, 81, 138, 185),
-            borderRadius: BorderRadius.circular(20),
-          ),
-          child: IconButton(
-              onPressed: () {
-                Navigator.push(context, MaterialPageRoute(builder: (context) => const RoutePage()));
-              },
-              iconSize: 30,
-              icon: const Icon(
-                Icons.directions,
-                color: Colors.white,
-              )),
-        ),
-      ),
-    );
-  }
+class SearchBar extends StatelessWidget {
+  const SearchBar({
+    super.key,
+  });
 
-  Align _favoritesButton() {
-    return Align(
-      alignment: Alignment.bottomLeft,
-      child: Padding(
-        padding: const EdgeInsets.only(left: 20, bottom: 30),
-        child: Container(
-          decoration: BoxDecoration(
-            color: const Color.fromARGB(255, 81, 138, 185),
-            borderRadius: BorderRadius.circular(20),
-          ),
-          child: IconButton(
-              onPressed: () async {
-                final result =
-                    await Navigator.push(context, MaterialPageRoute(builder: (context) => const FavoritesPage()));
-                if (result is! Landmark) return;
-                await context.read<MainPageCubit>().centerOnLandmark(result);
-              },
-              iconSize: 30,
-              icon: const Icon(
-                Icons.favorite_border,
-                color: Colors.white,
-              )),
-        ),
-      ),
-    );
-  }
-
-  Align _centerOnPositionButton() {
-    return Align(
-      alignment: Alignment.bottomRight,
-      child: Padding(
-        padding: const EdgeInsets.only(right: 20, bottom: 30),
-        child: Container(
-          decoration: BoxDecoration(
-            color: const Color.fromARGB(255, 81, 138, 185),
-            borderRadius: BorderRadius.circular(20),
-          ),
-          child: IconButton(
-              onPressed: () {
-                context.read<MainPageCubit>().onFollowPositionButtonPressed();
-              },
-              iconSize: 30,
-              icon: const Icon(
-                CupertinoIcons.location,
-                color: Colors.white,
-              )),
-        ),
-      ),
-    );
-  }
-
-  Container _searchBar(BuildContext context) {
+  @override
+  Widget build(BuildContext context) {
     return Container(
       margin: const EdgeInsets.only(top: 60, left: 20, right: 80),
       decoration: const BoxDecoration(boxShadow: [

@@ -62,6 +62,6 @@ class MainPageCubit extends Cubit<MainPageState> {
 
   void onRouteTap() {
     repo!.calculateRoute(state.focusedLandmark!);
-    emit(MainPageState());
+    emit(MainPageHasRoutes());
   }
 }
