@@ -4,7 +4,8 @@ final class MainPageState {
   Landmark? focusedLandmark;
   bool isLandmarkFavorite;
   Coordinates? currentPosition;
-  MainPageState({this.focusedLandmark, this.isLandmarkFavorite = false, this.currentPosition});
+  bool hasRoutes;
+  MainPageState({this.focusedLandmark, this.isLandmarkFavorite = false, this.currentPosition, this.hasRoutes = false});
 }
 
 final class MainPageInitial extends MainPageState {

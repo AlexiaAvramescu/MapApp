@@ -11,7 +11,7 @@ class RoutePage extends StatelessWidget {
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_ios),
           onPressed: () {
-            Navigator.of(context).canPop();
+            Navigator.of(context).pop();
           },
         ),
       ),

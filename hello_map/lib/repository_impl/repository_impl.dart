@@ -41,8 +41,9 @@ class RepositoryImpl implements Repository {
   VoidCallback? updateFavoritesListCallBack;
 
   late PermissionStatus _locationPermissionStatus = PermissionStatus.denied;
-  late PositionService _positionService;
-  late bool _hasLiveDataSource = false;
+  late PositionService? _positionService;
+  late bool? _hasLiveDataSource = false;
+  Coordinates? currentPosition;
 
   late gem.RoutingService routingService;
   List<gem.Route> shownRoutes = [];
@@ -61,8 +62,9 @@ class RepositoryImpl implements Repository {
 
   @override
   Future<void> initializeServices() async {
-    gem.RoutingService.create(mapController.mapId).then((service) => routingService = service);
-    PositionService.create(mapController.mapId).then((service) => _positionService = service);
+    routingService = await gem.RoutingService.create(mapController.mapId);
+    _positionService = await PositionService.create(mapController.mapId);
+
     LandmarkStoreService.create(mapController.mapId).then((service) {
       landmarkStoreService = service;
 
@@ -257,8 +259,7 @@ class RepositoryImpl implements Repository {
     //centerOnCoordinates(landmark.getCoordinates());
   }
 
-  @override
-  Future<void> onFollowPositionButtonPressed(void Function(Coordinates) mapUpdateCallback) async {
+  getLocationPermission() async {
     if (kIsWeb) {
       // On web platform permission are handled differently than other platforms.
       // The SDK handles the request of permission for location
@@ -274,19 +275,28 @@ class RepositoryImpl implements Repository {
 
     // After the permission was granted, we can set the live data source (in most cases the GPS)
     // The data source should be set only once, otherwise we'll get -5 error
-    if (!_hasLiveDataSource) {
-      await _positionService.removeDataSource();
-      await _positionService.setLiveDataSource();
+    if (!_hasLiveDataSource!) {
+      await _positionService!.removeDataSource();
+      await _positionService!.setLiveDataSource();
       _hasLiveDataSource = true;
-    }
 
+      Completer<Coordinates> completer = Completer<Coordinates>();
+
+      await _positionService!.addPositionListener((p0) {
+        if (!completer.isCompleted) completer.complete(p0.coordinates);
+      });
+
+      currentPosition = await completer.future;
+    }
+  }
+
+  @override
+  Future<void> onFollowPositionButtonPressed(void Function(Coordinates) mapUpdateCallback) async {
+    getLocationPermission();
     // After data source is set, startFollowingPosition can be safely called
     if (_locationPermissionStatus == PermissionStatus.granted) {
       // Optionally, we can set an animation
       final animation = GemAnimation(type: EAnimation.AnimationLinear);
-      _positionService.addPositionListener((p0) {
-        mapUpdateCallback(p0.coordinates);
-      }); //Callback to update map view to the current pos
 
       mapController.startFollowingPosition(animation: animation);
     }
@@ -313,10 +323,19 @@ class RepositoryImpl implements Repository {
 
   @override
   void calculateRoute(Landmark destiantion) async {
+    await getLocationPermission();
+
     // Create a landmark list
     final landmarkWaypoints = await gem.LandmarkList.create(mapController.mapId);
 
     landmarkWaypoints.push_back(destiantion);
+
+    //if(currentPosition == null)
+
+    var landmark = Landmark.create();
+    await landmark
+        .setCoordinates(Coordinates(latitude: currentPosition!.latitude, longitude: currentPosition!.longitude));
+    landmarkWaypoints.push_back(landmark);
 
     final routePreferences = RoutePreferences();
 
@@ -349,7 +368,6 @@ class RepositoryImpl implements Repository {
         await mapController.centerOnRoute(mainRoute);
       }
     });
-    //haveRoutes = true;
 
     //return result;
   }

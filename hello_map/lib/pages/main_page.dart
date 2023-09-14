@@ -75,7 +75,7 @@ class _MainPageState extends State<MainPage> {
                           return LandmarkPanel(
                             onCancelTap: () => context.read<MainPageCubit>().onCancelLandmarkPanel(),
                             onFavoritesTap: () => context.read<MainPageCubit>().onFavoritesTap(),
-                            onRouteTap: () => 0, //context.read<MainPage>(). ,
+                            onRouteTap: () => context.read<MainPageCubit>().onRouteTap(), //context.read<MainPage>(). ,
                             isFavoriteLandmark: state.isLandmarkFavorite,
                             coords: snapshot.data!.formattedCoords,
                             category: snapshot.data!.categoryName,
