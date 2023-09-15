@@ -19,11 +19,11 @@ class SearchPageCubit extends Cubit<SearchPageState> {
 
   Coordinates getRelevantCoordinates(double x, double y) => repo!.transformScreenToWgs(x, y);
 
-  void onSearchTextChange(String text, Coordinates coordinates) async {
-    Timer timer = Timer(Duration(seconds: 1), () async {
-      await onSubmited(text, coordinates);
-    });
-  }
+  // void onSearchTextChange(String text, Coordinates coordinates) async {
+  //   Timer timer = Timer(Duration(seconds: 1), () async {
+  //     await onSubmited(text, coordinates);
+  //   });
+  // }
 
   Future<void> onSubmited(String text, Coordinates coordinates) async {
     emit(SearchPageLoadingState());

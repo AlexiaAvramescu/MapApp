@@ -226,22 +226,30 @@ class RepositoryImpl implements Repository {
   }
 
   @override
-  Future<Landmark?> registerLandmarkTapCallback(Point<num> pos) async {
+  Future<Landmark?> registerTapCallback(Point<num> pos) async {
     // Select the object at the tap position.
     await mapController.selectMapObjects(pos);
 
     // Get the selected landmarks.
     final landmarks = await mapController.cursorSelectionLandmarks();
-
     final landmarksSize = await landmarks.size();
 
     // Check if there is a selected Landmark.
     if (landmarksSize == 0) {
+      final routes = await mapController.cursorSelectionRoutes();
+      final routesSize = await routes.size();
+
+      if (routesSize == 0) return null;
+
+      final route = await routes.at(0);
+      final prefs = mapController.preferences();
+      final routesMap = await prefs.routes();
+      routesMap.setMainRoute(route);
+
       return null;
     }
-
     // Highlight the landmark on the map.
-    mapController.activateHighlight(landmarks);
+    await mapController.activateHighlight(landmarks);
 
     final lmk = await landmarks.at(0);
 
@@ -256,10 +264,9 @@ class RepositoryImpl implements Repository {
     LandmarkList landmarks = await LandmarkList.create(mapController.mapId);
     await landmarks.push_back(landmark);
     await mapController.activateHighlight(landmarks, renderSettings: RenderSettings());
-    //centerOnCoordinates(landmark.getCoordinates());
   }
 
-  getLocationPermission() async {
+  Future<void> getLocationPermission() async {
     if (kIsWeb) {
       // On web platform permission are handled differently than other platforms.
       // The SDK handles the request of permission for location
@@ -331,7 +338,7 @@ class RepositoryImpl implements Repository {
   }
 
   @override
-  void calculateRoute(Landmark destiantion) async {
+  Future<void> calculateRoute(Landmark destiantion) async {
     await removeRoutes(shownRoutes);
 
     await getLocationPermission();
@@ -339,16 +346,18 @@ class RepositoryImpl implements Repository {
     // Create a landmark list
     final landmarkWaypoints = await gem.LandmarkList.create(mapController.mapId);
 
-    landmarkWaypoints.push_back(destiantion);
-
+    // add currernt pos
     var landmark = Landmark.create();
     await landmark
         .setCoordinates(Coordinates(latitude: currentPosition!.latitude, longitude: currentPosition!.longitude));
     landmarkWaypoints.push_back(landmark);
 
+    // add destination
+    landmarkWaypoints.push_back(destiantion);
+
     final routePreferences = RoutePreferences();
 
-    var result = await routingService.calculateRoute(landmarkWaypoints, routePreferences, (err, routes) async {
+    await routingService.calculateRoute(landmarkWaypoints, routePreferences, (err, routes) async {
       if (err != GemError.success || routes == null) {
         return;
       } else {

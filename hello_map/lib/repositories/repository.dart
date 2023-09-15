@@ -25,7 +25,7 @@ abstract class Repository {
   void deactivateAllHighlights();
   Future<bool> onFavoritesTap({required bool isLandmarkFavorite, required Landmark focusedLandmark});
   Future<bool> checkIfFavourite({required Landmark focusedLandmark});
-  Future<Landmark?> registerLandmarkTapCallback(Point<num> pos);
+  Future<Landmark?> registerTapCallback(Point<num> pos);
   Future<void> onFollowPositionButtonPressed(void Function(Coordinates) mapUpdateCallback);
-  void calculateRoute(Landmark destiantion);
+  Future<void> calculateRoute(Landmark destiantion);
 }

@@ -34,8 +34,8 @@ class MainPageCubit extends Cubit<MainPageState> {
     emit(MainPageState(focusedLandmark: state.focusedLandmark, isLandmarkFavorite: value));
   }
 
-  Future<void> registerLandmarkTapCallback(Point<num> pos) async {
-    final landmark = await repo!.registerLandmarkTapCallback(pos);
+  Future<void> registerTapCallback(Point<num> pos) async {
+    final landmark = await repo!.registerTapCallback(pos);
     if (landmark != null) {
       if (await repo!.checkIfFavourite(focusedLandmark: landmark)) {
         emit(MainPageFocusedLandmark(landmark: landmark, isFavoriteLandmark: true));
@@ -43,6 +43,7 @@ class MainPageCubit extends Cubit<MainPageState> {
         emit(MainPageFocusedLandmark(landmark: landmark));
       }
     }
+    //emit(MainPageState());
   }
 
   Future<void> centerOnLandmark(Landmark landmark) async {
@@ -60,8 +61,8 @@ class MainPageCubit extends Cubit<MainPageState> {
     repo!.onFollowPositionButtonPressed(mapViewUpdate);
   }
 
-  void onRouteTap() {
-    repo!.calculateRoute(state.focusedLandmark!);
+  Future<void> onRouteTap() async {
+    await repo!.calculateRoute(state.focusedLandmark!);
     emit(MainPageHasRoutes());
   }
 }
