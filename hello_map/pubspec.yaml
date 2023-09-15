@@ -14,6 +14,7 @@ dependencies:
   flutter_bloc:
   bloc:
   get_it:
+  intl:
 
 
   gem_kit:

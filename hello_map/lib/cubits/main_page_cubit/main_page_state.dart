@@ -4,8 +4,18 @@ final class MainPageState {
   Landmark? focusedLandmark;
   bool isLandmarkFavorite;
   Coordinates? currentPosition;
+  InstructionModel? currentInstruction;
+  bool isNavigating;
   bool hasRoutes;
-  MainPageState({this.focusedLandmark, this.isLandmarkFavorite = false, this.currentPosition, this.hasRoutes = false});
+
+  MainPageState({
+    this.focusedLandmark,
+    this.isLandmarkFavorite = false,
+    this.currentPosition,
+    this.currentInstruction,
+    this.hasRoutes = false,
+    this.isNavigating = false,
+  });
 }
 
 final class MainPageInitial extends MainPageState {
@@ -19,4 +29,9 @@ final class MainPageFocusedLandmark extends MainPageState {
 
 final class MainPageHasRoutes extends MainPageState {
   MainPageHasRoutes() : super(hasRoutes: true);
+}
+
+final class MainPageNavigating extends MainPageState {
+  MainPageNavigating({required InstructionModel instruction})
+      : super(hasRoutes: true, isNavigating: true, currentInstruction: instruction);
 }

@@ -4,6 +4,7 @@ import 'package:bloc/bloc.dart';
 import 'package:gem_kit/api/gem_coordinates.dart';
 import 'package:gem_kit/api/gem_landmark.dart';
 import 'package:hello_map/controller.dart';
+import 'package:hello_map/instruction_model.dart';
 import 'package:hello_map/landmark_info.dart';
 import 'package:hello_map/repositories/repository.dart';
 
@@ -64,5 +65,13 @@ class MainPageCubit extends Cubit<MainPageState> {
   Future<void> onRouteTap() async {
     await repo!.calculateRoute(state.focusedLandmark!);
     emit(MainPageHasRoutes());
+  }
+
+  void updateInstructionCallBack(InstructionModel instruction) {
+    emit(MainPageNavigating(instruction: instruction));
+  }
+
+  Future<void> startSimulation() async {
+    repo!.startSimulation(updateInstructionCallBack: updateInstructionCallBack);
   }
 }

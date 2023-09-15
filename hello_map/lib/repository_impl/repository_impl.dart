@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:ffi';
 
 import 'dart:math';
 
@@ -12,6 +13,7 @@ import 'package:gem_kit/api/gem_landmarkstore.dart';
 import 'package:gem_kit/api/gem_landmarkstoreservice.dart';
 import 'package:gem_kit/api/gem_mapviewpreferences.dart';
 import 'package:gem_kit/api/gem_mapviewrendersettings.dart';
+import 'package:gem_kit/api/gem_navigationservice.dart';
 import 'package:gem_kit/api/gem_progresslistener.dart';
 import 'package:gem_kit/api/gem_routingpreferences.dart';
 import 'package:gem_kit/api/gem_routingservice.dart';
@@ -20,6 +22,7 @@ import 'package:gem_kit/api/gem_types.dart';
 import 'package:gem_kit/gem_kit_basic.dart';
 import 'package:gem_kit/gem_kit_map_controller.dart';
 import 'package:gem_kit/gem_kit_position.dart';
+import 'package:hello_map/instruction_model.dart';
 import 'package:hello_map/landmark_info.dart';
 import 'package:hello_map/repositories/repository.dart';
 import 'package:gem_kit/api/gem_searchservice.dart';
@@ -30,64 +33,67 @@ import 'dart:ui' as ui;
 import 'package:hello_map/utility.dart';
 
 class RepositoryImpl implements Repository {
-  final GemMapController mapController;
+  final GemMapController _mapController;
 
-  late SearchService gemSearchService;
-  ProgressListener? searchProgress;
+  late SearchService _gemSearchService;
+  ProgressListener? _searchProgress;
 
-  LandmarkStoreService? landmarkStoreService;
-  LandmarkStore? favoritesStore;
-  List<Landmark> favorites = [];
-  VoidCallback? updateFavoritesListCallBack;
+  LandmarkStoreService? _landmarkStoreService;
+  LandmarkStore? _favoritesStore;
+  final List<Landmark> _favorites = [];
+  VoidCallback? _updateFavoritesListCallBack;
 
   late PermissionStatus _locationPermissionStatus = PermissionStatus.denied;
   late PositionService? _positionService;
   late bool? _hasLiveDataSource = false;
-  Coordinates? currentPosition;
+  Coordinates? _currentPosition;
 
-  late gem.RoutingService routingService;
-  List<gem.Route> shownRoutes = [];
+  late gem.RoutingService _routingService;
+  final List<gem.Route> _shownRoutes = [];
+
+  NavigationService? _navigationService;
 
   late Completer<List<Landmark>> completer;
 
   @override
-  set favoritesUpdateCallBack(VoidCallback function) => updateFavoritesListCallBack = function;
+  set favoritesUpdateCallBack(VoidCallback function) => _updateFavoritesListCallBack = function;
 
-  RepositoryImpl({required this.mapController}) {
-    SearchService.create(mapController.mapId).then((service) => gemSearchService = service);
+  RepositoryImpl({required GemMapController mapController}) : _mapController = mapController {
+    SearchService.create(_mapController.mapId).then((service) => _gemSearchService = service);
   }
 
   @override
-  void updateFavoritesPageList() => updateFavoritesListCallBack!();
+  void updateFavoritesPageList() => _updateFavoritesListCallBack!();
 
   @override
   Future<void> initializeServices() async {
-    routingService = await gem.RoutingService.create(mapController.mapId);
-    _positionService = await PositionService.create(mapController.mapId);
+    _navigationService = await NavigationService.create(_mapController.mapId);
+    _routingService = await gem.RoutingService.create(_mapController.mapId);
+    _positionService = await PositionService.create(_mapController.mapId);
 
-    LandmarkStoreService.create(mapController.mapId).then((service) {
-      landmarkStoreService = service;
+    LandmarkStoreService.create(_mapController.mapId).then((service) {
+      _landmarkStoreService = service;
 
       String favoritesStoreName = 'Favorites';
 
-      landmarkStoreService!.getLandmarkStoreByName(favoritesStoreName).then((value) async {
-        value ??= await landmarkStoreService!.createLandmarkStore(favoritesStoreName);
-        favoritesStore = value;
+      _landmarkStoreService!.getLandmarkStoreByName(favoritesStoreName).then((value) async {
+        value ??= await _landmarkStoreService!.createLandmarkStore(favoritesStoreName);
+        _favoritesStore = value;
 
-        final landmarkList = await favoritesStore!.getLandmarks();
+        final landmarkList = await _favoritesStore!.getLandmarks();
         final size = await landmarkList.size();
 
         for (int i = 0; i < size; i++) {
-          favorites.add(await landmarkList.at(i));
+          _favorites.add(await landmarkList.at(i));
         }
-        updateFavoritesListCallBack!();
+        _updateFavoritesListCallBack!();
       });
     });
   }
 
   @override
   Coordinates transformScreenToWgs(double x, double y) =>
-      mapController.transformScreenToWgs(XyType(x: x.toInt(), y: y.toInt()))!;
+      _mapController.transformScreenToWgs(XyType(x: x.toInt(), y: y.toInt()))!;
 
   @override
   Future<List<Landmark>> search(String text, Coordinates coordinates,
@@ -96,7 +102,7 @@ class RepositoryImpl implements Repository {
 
     //if (searchProgress != null) await gemSearchService.cancelSearch(searchProgress!);
 
-    searchProgress = await gemSearchService.search(text, coordinates, (err, results) async {
+    _searchProgress = await _gemSearchService.search(text, coordinates, (err, results) async {
       if (err != GemError.success || results == null) {
         completer.complete([]);
         return;
@@ -152,11 +158,11 @@ class RepositoryImpl implements Repository {
     final animation = GemAnimation(type: EAnimation.AnimationLinear);
 
     // Use the map controller to center on coordinates
-    await mapController.centerOnCoordinates(
+    await _mapController.centerOnCoordinates(
       coordinates,
       animation: animation,
       viewAngle: 0,
-      xy: XyType(x: mapController.viewport.width ~/ 2, y: mapController.viewport.height ~/ 2),
+      xy: XyType(x: _mapController.viewport.width ~/ 2, y: _mapController.viewport.height ~/ 2),
     );
   }
 
@@ -188,12 +194,12 @@ class RepositoryImpl implements Repository {
   }
 
   @override
-  void deactivateAllHighlights() => mapController.deactivateAllHighlights();
+  void deactivateAllHighlights() => _mapController.deactivateAllHighlights();
 
   @override
   Future<bool> checkIfFavourite({required Landmark focusedLandmark}) async {
     final focusedLandmarkCoords = focusedLandmark.getCoordinates();
-    final favourites = await favoritesStore!.getLandmarks();
+    final favourites = await _favoritesStore!.getLandmarks();
     final favoritesSize = await favourites.size();
 
     for (int i = 0; i < favoritesSize; i++) {
@@ -216,11 +222,11 @@ class RepositoryImpl implements Repository {
   @override
   Future<bool> onFavoritesTap({required bool isLandmarkFavorite, required Landmark focusedLandmark}) async {
     if (isLandmarkFavorite) {
-      await favoritesStore!.removeLandmark(focusedLandmark);
-      favorites.removeWhere((element) => isSameLandmark(element, focusedLandmark));
+      await _favoritesStore!.removeLandmark(focusedLandmark);
+      _favorites.removeWhere((element) => isSameLandmark(element, focusedLandmark));
     } else {
-      await favoritesStore!.addLandmark(focusedLandmark);
-      favorites.add(focusedLandmark);
+      await _favoritesStore!.addLandmark(focusedLandmark);
+      _favorites.add(focusedLandmark);
     }
     return !isLandmarkFavorite;
   }
@@ -228,28 +234,28 @@ class RepositoryImpl implements Repository {
   @override
   Future<Landmark?> registerTapCallback(Point<num> pos) async {
     // Select the object at the tap position.
-    await mapController.selectMapObjects(pos);
+    await _mapController.selectMapObjects(pos);
 
     // Get the selected landmarks.
-    final landmarks = await mapController.cursorSelectionLandmarks();
+    final landmarks = await _mapController.cursorSelectionLandmarks();
     final landmarksSize = await landmarks.size();
 
     // Check if there is a selected Landmark.
     if (landmarksSize == 0) {
-      final routes = await mapController.cursorSelectionRoutes();
+      final routes = await _mapController.cursorSelectionRoutes();
       final routesSize = await routes.size();
 
       if (routesSize == 0) return null;
 
       final route = await routes.at(0);
-      final prefs = mapController.preferences();
+      final prefs = _mapController.preferences();
       final routesMap = await prefs.routes();
       routesMap.setMainRoute(route);
 
       return null;
     }
     // Highlight the landmark on the map.
-    await mapController.activateHighlight(landmarks);
+    await _mapController.activateHighlight(landmarks);
 
     final lmk = await landmarks.at(0);
 
@@ -257,13 +263,13 @@ class RepositoryImpl implements Repository {
   }
 
   @override
-  List<Landmark> getFavorites() => favorites;
+  List<Landmark> getFavorites() => _favorites;
 
   @override
   Future<void> centerOnLandmark(Landmark landmark) async {
-    LandmarkList landmarks = await LandmarkList.create(mapController.mapId);
+    LandmarkList landmarks = await LandmarkList.create(_mapController.mapId);
     await landmarks.push_back(landmark);
-    await mapController.activateHighlight(landmarks, renderSettings: RenderSettings());
+    await _mapController.activateHighlight(landmarks, renderSettings: RenderSettings());
   }
 
   Future<void> getLocationPermission() async {
@@ -293,7 +299,7 @@ class RepositoryImpl implements Repository {
         if (!completer.isCompleted) completer.complete(p0.coordinates);
       });
 
-      currentPosition = await completer.future;
+      _currentPosition = await completer.future;
     }
   }
 
@@ -305,31 +311,12 @@ class RepositoryImpl implements Repository {
       // Optionally, we can set an animation
       final animation = GemAnimation(type: EAnimation.AnimationLinear);
 
-      mapController.startFollowingPosition(animation: animation);
+      _mapController.startFollowingPosition(animation: animation);
     }
-  }
-
-  String convertDistance(int meters) {
-    if (meters >= 1000) {
-      double kilometers = meters / 1000;
-      return '${kilometers.toStringAsFixed(1)} km';
-    } else {
-      return '${meters.toString()} m';
-    }
-  }
-
-  String convertDuration(int seconds) {
-    int hours = seconds ~/ 3600; // Number of whole hours
-    int minutes = (seconds % 3600) ~/ 60; // Number of whole minutes
-
-    String hoursText = (hours > 0) ? '$hours h ' : ''; // Hours text
-    String minutesText = '$minutes min'; // Minutes text
-
-    return hoursText + minutesText;
   }
 
   removeRoutes(List<gem.Route> routes) async {
-    final prefs = mapController.preferences();
+    final prefs = _mapController.preferences();
     final routesMap = await prefs.routes();
 
     for (final route in routes) {
@@ -339,17 +326,17 @@ class RepositoryImpl implements Repository {
 
   @override
   Future<void> calculateRoute(Landmark destiantion) async {
-    await removeRoutes(shownRoutes);
+    await removeRoutes(_shownRoutes);
 
     await getLocationPermission();
 
     // Create a landmark list
-    final landmarkWaypoints = await gem.LandmarkList.create(mapController.mapId);
+    final landmarkWaypoints = await gem.LandmarkList.create(_mapController.mapId);
 
     // add currernt pos
     var landmark = Landmark.create();
     await landmark
-        .setCoordinates(Coordinates(latitude: currentPosition!.latitude, longitude: currentPosition!.longitude));
+        .setCoordinates(Coordinates(latitude: _currentPosition!.latitude, longitude: _currentPosition!.longitude));
     landmarkWaypoints.push_back(landmark);
 
     // add destination
@@ -357,12 +344,12 @@ class RepositoryImpl implements Repository {
 
     final routePreferences = RoutePreferences();
 
-    await routingService.calculateRoute(landmarkWaypoints, routePreferences, (err, routes) async {
+    await _routingService.calculateRoute(landmarkWaypoints, routePreferences, (err, routes) async {
       if (err != GemError.success || routes == null) {
         return;
       } else {
         // Get the controller's preferences
-        final mapViewPreferences = mapController.preferences();
+        final mapViewPreferences = _mapController.preferences();
         // Get the routes from the preferences
         final routesMap = await mapViewPreferences.routes();
         //Get the number of routes
@@ -370,7 +357,7 @@ class RepositoryImpl implements Repository {
 
         for (int i = 0; i < routesSize; i++) {
           final route = await routes.at(i);
-          shownRoutes.add(route);
+          _shownRoutes.add(route);
 
           final timeDistance = await route.getTimeDistance();
 
@@ -383,8 +370,38 @@ class RepositoryImpl implements Repository {
         // Select the first route as the main one
         final mainRoute = await routes.at(0);
 
-        await mapController.centerOnRoute(mainRoute);
+        await _mapController.centerOnRoute(mainRoute);
       }
     });
+  }
+
+  _navigateOnRoute({required gem.Route route, required Function(InstructionModel) onInstructionUpdated}) async {
+    await _navigationService!.startSimulation(route, (type, instruction) async {
+      if (type != NavigationEventType.navigationInstructionUpdate || instruction == null) {
+        //is nav = false
+        removeRoutes(_shownRoutes);
+        return;
+      }
+
+      // isNavigating set to true
+
+      final ins = await InstructionModel.fromGemInstruction(instruction);
+      onInstructionUpdated(ins);
+
+      instruction.dispose();
+    });
+  }
+
+  @override
+  Future<void> startSimulation({required void Function(InstructionModel) updateInstructionCallBack}) async {
+    final prefs = _mapController.preferences();
+    final routesMap = await prefs.routes();
+    await _navigateOnRoute(
+        route: await routesMap.getMainRoute(),
+        onInstructionUpdated: (instruction) {
+          updateInstructionCallBack(instruction);
+        });
+
+    _mapController.startFollowingPosition(animation: GemAnimation(duration: 200, type: EAnimation.AnimationLinear));
   }
 }

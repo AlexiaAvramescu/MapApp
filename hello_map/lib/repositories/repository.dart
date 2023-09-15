@@ -6,6 +6,7 @@ import 'package:gem_kit/api/gem_coordinates.dart';
 import 'package:gem_kit/api/gem_geographicarea.dart';
 import 'package:gem_kit/api/gem_landmark.dart';
 import 'package:gem_kit/api/gem_searchpreferences.dart';
+import 'package:hello_map/instruction_model.dart';
 import 'package:hello_map/landmark_info.dart';
 
 abstract class Repository {
@@ -28,4 +29,5 @@ abstract class Repository {
   Future<Landmark?> registerTapCallback(Point<num> pos);
   Future<void> onFollowPositionButtonPressed(void Function(Coordinates) mapUpdateCallback);
   Future<void> calculateRoute(Landmark destiantion);
+  Future<void> startSimulation({required void Function(InstructionModel) updateInstructionCallBack});
 }

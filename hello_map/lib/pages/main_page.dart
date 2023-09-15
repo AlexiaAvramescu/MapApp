@@ -9,11 +9,12 @@ import 'package:hello_map/controller.dart';
 import 'package:hello_map/cubits/favorites_page_cubit/cubit/favorites_page_cubit.dart';
 import 'package:hello_map/cubits/main_page_cubit/main_page_cubit.dart';
 import 'package:hello_map/cubits/search_page_cubit/cubit/search_page_cubit.dart';
-import 'package:hello_map/landmark_panel.dart';
+import 'package:hello_map/widgets/landmark_panel.dart';
 import 'package:hello_map/pages/favorites_page.dart';
 import 'package:hello_map/pages/route_page.dart';
-import 'package:hello_map/pages/search_page.dart';
 import 'package:hello_map/landmark_info.dart';
+import 'package:hello_map/widgets/search_bar.dart';
+import 'package:hello_map/widgets/top_navigation_panel.dart';
 
 class MainPage extends StatefulWidget {
   const MainPage({super.key});
@@ -56,7 +57,7 @@ class _MainPageState extends State<MainPage> {
             GemMap(
               onMapCreated: onMapCreated,
             ),
-            SearchBar(),
+            const CustomSearchBar(),
             Align(
               alignment: Alignment.topRight,
               child: Padding(
@@ -78,6 +79,38 @@ class _MainPageState extends State<MainPage> {
                 ),
               ),
             ),
+            BlocBuilder<MainPageCubit, MainPageState>(builder: (context, state) {
+              if (state.hasRoutes) {
+                return Align(
+                  alignment: Alignment.bottomCenter,
+                  child: Padding(
+                    padding: const EdgeInsets.only(bottom: 30),
+                    child: IconButton(
+                        onPressed: () {
+                          //context.read<MainPageCubit>().startSimulation();
+                        },
+                        iconSize: 50,
+                        icon: const Icon(
+                          Icons.directions,
+                          color: Colors.red,
+                        )),
+                  ),
+                );
+              }
+              return Container();
+            }),
+            BlocBuilder<MainPageCubit, MainPageState>(builder: (context, state) {
+              if (state.isNavigating) {
+                return Positioned(
+                  top: 40,
+                  left: 10,
+                  child: NavigationInstructionPanel(
+                    instruction: state.currentInstruction!,
+                  ),
+                );
+              }
+              return Container();
+            }),
             Align(
               alignment: Alignment.bottomRight,
               child: Padding(
@@ -153,51 +186,6 @@ class _MainPageState extends State<MainPage> {
               },
             )
           ],
-        ),
-      ),
-    );
-  }
-}
-
-class SearchBar extends StatelessWidget {
-  const SearchBar({
-    super.key,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      margin: const EdgeInsets.only(top: 60, left: 20, right: 80),
-      decoration: const BoxDecoration(boxShadow: [
-        BoxShadow(
-          color: Color.fromARGB(255, 134, 134, 134),
-          blurRadius: 40,
-          spreadRadius: 0,
-        ),
-      ]),
-      child: GestureDetector(
-        onTap: () {
-          Navigator.push(context, MaterialPageRoute(builder: (context) => const SearchPage()));
-        }, //move to search page
-        child: TextField(
-          enabled: false,
-          decoration: InputDecoration(
-            filled: true,
-            fillColor: Colors.white,
-            contentPadding: const EdgeInsets.all(15),
-            hintText: 'Search location',
-            hintStyle: const TextStyle(
-              color: Color.fromARGB(255, 160, 160, 160),
-            ),
-            prefixIcon: const Padding(
-              padding: EdgeInsets.all(12),
-              child: Icon(Icons.search_rounded),
-            ),
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(15),
-              borderSide: BorderSide.none,
-            ),
-          ),
         ),
       ),
     );
